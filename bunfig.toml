@@ -1,0 +1,15 @@
+preload = ["typescript"]
+
+[resolve]
+# Configure module resolution for path aliases
+alias = {
+  "@" = "./src",
+  "@components" = "./src/components",
+  "@routes" = "./src/routes",
+  "@models" = "./src/models",
+  "@config" = "./src/config",
+  "@utils" = "./src/utils",
+  "@services" = "./src/services",
+  "@middlewares" = "./src/middlewares",
+  "@types" = "./src/types"
+}
