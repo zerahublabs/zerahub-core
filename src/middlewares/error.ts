@@ -30,6 +30,7 @@ export const errorMiddleware = (err: Error, c: Context) => {
 			500,
 		);
 	}
+
 	return c.json(
 		{
 			status: "fail",

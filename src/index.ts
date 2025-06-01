@@ -3,9 +3,10 @@ import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { openAPISpecs } from "hono-openapi";
 import { swaggerUI } from "@hono/swagger-ui";
+import { errorMiddleware } from "./middlewares/error";
 import auth from "@routes/auth";
 import user from "@routes/user";
-import { errorMiddleware } from "./middlewares/error";
+import collection from "@routes/collection";
 
 const app = new Hono({});
 
@@ -14,8 +15,9 @@ app.use(cors());
 app.use(logger());
 
 // routes
-app.route("/auth", auth);
-app.route("/user", user);
+app.route("/auths", auth);
+app.route("/users", user);
+app.route("/collection", collection);
 
 // default routing
 app.get("/", (c) => {

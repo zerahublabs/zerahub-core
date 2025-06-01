@@ -29,7 +29,7 @@ model User {
     address    String       @unique
     createdAt  DateTime     @default(now())
     updatedAt  DateTime     @default(now())
-    deletedAt  DateTime     @default(now())
+    deletedAt  DateTime?
     Collection Collection[]
 }
 
@@ -39,14 +39,15 @@ model Collection {
     title       String
     description String
     price       BigInt               @default(0)
-    cover       String
+    cover       String?
     isDeleted   Boolean              @default(false)
     createdAt   DateTime             @default(now())
     updatedAt   DateTime             @default(now())
-    deletedAt   DateTime             @default(now())
+    deletedAt   DateTime?
     categories  CollectionCategory[]
 
     user               User                 @relation(fields: [userId], references: [id])
+    coverStorage       Storage?             @relation(fields: [cover], references: [id])
     CollectionMetadata CollectionMetadata[]
 }
 
@@ -55,9 +56,32 @@ model CollectionMetadata {
     collectionid String
     key          String
     value        String
-    createdAt    DateTime
-    updatedAt    DateTime
-    deletedAt    DateTime
+    createdAt    DateTime @default(now())
+    updatedAt    DateTime @default(now())
+    deletedAt    DateTime?
 
     collection Collection @relation(fields: [collectionid], references: [id])
+}
+
+model Storage {
+    id              String            @id @default(uuid())
+    filename        String            @unique
+    bucket          String
+    createdAt       DateTime          @default(now())
+    updatedAt       DateTime          @default(now())
+    deletedAt       DateTime?
+    StorageMetadata StorageMetadata[]
+    Collection      Collection[]
+}
+
+model StorageMetadata {
+    id        String   @id @default(uuid())
+    key       String
+    value     String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @default(now())
+
+    storageId String
+
+    storage Storage @relation(fields: [storageId], references: [id])
 }
