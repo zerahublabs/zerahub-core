@@ -38,7 +38,7 @@ model Collection {
     userId      String
     title       String
     description String
-    price       BigInt               @default(0)
+    price       Decimal              @default(0)
     cover       String?
     isDeleted   Boolean              @default(false)
     createdAt   DateTime             @default(now())
@@ -52,12 +52,12 @@ model Collection {
 }
 
 model CollectionMetadata {
-    id           String   @id @default(uuid())
+    id           String    @id @default(uuid())
     collectionid String
     key          String
     value        String
-    createdAt    DateTime @default(now())
-    updatedAt    DateTime @default(now())
+    createdAt    DateTime  @default(now())
+    updatedAt    DateTime  @default(now())
     deletedAt    DateTime?
 
     collection Collection @relation(fields: [collectionid], references: [id])

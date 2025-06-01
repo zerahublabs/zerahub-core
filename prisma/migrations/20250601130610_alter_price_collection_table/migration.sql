@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Collection" ALTER COLUMN "price" SET DEFAULT 0,
+ALTER COLUMN "price" SET DATA TYPE DECIMAL(65,30);

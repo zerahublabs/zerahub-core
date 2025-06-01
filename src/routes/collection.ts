@@ -124,10 +124,25 @@ app.post("/:collectionId/cover", async (c) => {
             `collections/${collectionId}/cover`
         );
 
+        await prisma.collection.update({
+            where: {
+                id: collection.id,
+            },
+            data: {
+                coverStorage: {
+                    connect: {
+                        id: storedFile.id,
+                    },
+                },
+            },
+        });
+
         return c.json({
             status: "ok",
             data: {
-                storage: storedFile,
+                id: storedFile.id,
+                filename: storedFile.filename,
+                createdAt: storedFile.createdAt,
             },
         });
     } catch (err) {

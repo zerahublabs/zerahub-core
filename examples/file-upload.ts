@@ -61,7 +61,7 @@ async function uploadCover() {
 
     try {
         const response = await axios.post(
-            `http://localhost:3001/collection/e7286716-83e3-4e32-9180-75e640fcc059/cover`,
+            `http://localhost:3001/collection/fa72e080-9ee0-4b52-8edd-372ff9279e3e/cover`,
             form,
             {
                 headers: {
