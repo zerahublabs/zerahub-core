@@ -1,29 +1,33 @@
 {
-  "name": "zerahub-core",
-  "scripts": {
-    "dev": "bun run --hot src/index.ts",
-    "test": "vitest run",
-    "test:watch": "vitest watch",
-    "test:coverage": "vitest run --coverage"
-  },
-  "dependencies": {
-    "@hono/zod-validator": "^0.7.0",
-    "@prisma/client": "^6.8.2",
-    "hono": "^4.7.10",
-    "siwe": "^3.0.0",
-    "viem": "^2.30.5",
-    "vitest": "^3.1.4",
-    "zod": "^3.25.42"
-  },
-  "devDependencies": {
-    "@types/bun": "latest",
-    "@types/node": "^22.15.29",
-    "prisma": "^6.8.2"
-  },
-  "module": "src/index.ts",
-  "type": "module",
-  "private": true,
-  "peerDependencies": {
-    "typescript": "^5"
-  }
+	"name": "zerahub-core",
+	"scripts": {
+		"dev": "bun run --hot src/index.ts",
+		"test": "vitest run",
+		"test:watch": "vitest watch",
+		"test:coverage": "vitest run --coverage"
+	},
+	"dependencies": {
+		"@hono/swagger-ui": "^0.5.1",
+		"@prisma/client": "^6.8.2",
+		"hono": "^4.7.11",
+		"hono-openapi": "^0.4.8",
+		"siwe": "^3.0.0",
+		"viem": "^2.30.5",
+		"vitest": "^3.1.4",
+		"winston": "^3.17.0",
+		"zod": "^3.25.44",
+		"zod-openapi": "^4.2.4"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "1.9.4",
+		"@types/bun": "latest",
+		"@types/node": "^22.15.29",
+		"prisma": "^6.8.2"
+	},
+	"module": "src/index.ts",
+	"type": "module",
+	"private": true,
+	"peerDependencies": {
+		"typescript": "^5.8.3"
+	}
 }

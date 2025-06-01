@@ -1,7 +1,11 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import { openAPISpecs } from "hono-openapi";
+import { swaggerUI } from "@hono/swagger-ui";
 import auth from "@routes/auth";
+import user from "@routes/user";
+import { errorMiddleware } from "./middlewares/error";
 
 const app = new Hono({});
 
@@ -11,16 +15,40 @@ app.use(logger());
 
 // routes
 app.route("/auth", auth);
+app.route("/user", user);
 
 // default routing
 app.get("/", (c) => {
-    return c.json({
-        status: "ok",
-        message: "health ok",
-    });
+	return c.json({
+		status: "ok",
+		message: "health ok",
+	});
 });
 
+app.get(
+	"/api-specs",
+	openAPISpecs(app, {
+		documentation: {
+			info: {
+				title: "ZeraHub API",
+				version: "1.0.0",
+				description: "ZeraHub Core API Specs",
+			},
+			servers: [
+				{
+					url: "http://localhost:3001",
+					description: "Local Servers",
+				},
+			],
+		},
+	}),
+);
+
+app.get("/docs", swaggerUI({ url: "/api-specs" }));
+
+app.onError(errorMiddleware);
+
 export default {
-    port: 3001,
-    fetch: app.fetch,
+	port: 3001,
+	fetch: app.fetch,
 };

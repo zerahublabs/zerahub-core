@@ -61,9 +61,3 @@ model CollectionMetadata {
 
     collection Collection @relation(fields: [collectionid], references: [id])
 }
-
-model UserChallange {
-    id        String   @id @default(uuid())
-    nonce     String   @default(uuid())
-    createdAt DateTime @default(now())
-}
