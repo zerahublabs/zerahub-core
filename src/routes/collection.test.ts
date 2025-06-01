@@ -1,6 +1,6 @@
 import { SiweMessage } from "siwe";
 import { mnemonicToAccount } from "viem/accounts";
-import { describe, beforeEach, it, expect } from "vitest";
+import { describe, beforeEach, it } from "vitest";
 import auth from "./auth";
 import collection from "./collection";
 
