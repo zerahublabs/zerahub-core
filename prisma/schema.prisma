@@ -38,7 +38,7 @@ model Collection {
     userId      String
     title       String
     description String
-    price       Decimal              @default(0)
+    price       Int                  @default(0)
     cover       String?
     isDeleted   Boolean              @default(false)
     createdAt   DateTime             @default(now())

@@ -11,7 +11,7 @@ const storage = new Storage(prisma);
 const createCollectionSchema = z.object({
     title: z.string().min(1),
     description: z.string().min(1),
-    price: z.string().transform(Number),
+    price: z.number().int().min(0).default(0).transform(Number),
 });
 
 type Variables = {
@@ -67,7 +67,7 @@ app.post("/", zodValidator(createCollectionSchema, "json"), async (c) => {
         data: {
             title: validatedData.title,
             description: validatedData.description,
-            price: validatedData.price,
+            price: Number(validatedData.price),
             user: {
                 connect: {
                     address: c.get("user").address,
@@ -76,10 +76,64 @@ app.post("/", zodValidator(createCollectionSchema, "json"), async (c) => {
         },
     });
 
+    const responseData = {
+        ...collection,
+        price: Number(collection.price),
+    };
+
     return c.json({
         status: "ok",
-        data: collection,
+        data: responseData,
     });
+});
+
+app.get("/:collectionId", async (c) => {
+    const collectionId = c.req.param("collectionId");
+
+    try {
+        const collection = await prisma.collection.findFirst({
+            where: {
+                id: collectionId,
+                user: {
+                    address: c.get("user").address,
+                },
+            },
+            omit: {
+                cover: true,
+                deletedAt: true,
+            },
+            include: {
+                coverStorage: {
+                    select: {
+                        id: true,
+                        filename: true,
+                        createdAt: true,
+                    },
+                },
+            },
+        });
+        const responseData = {
+            ...collection,
+            price: Number(collection?.price),
+        };
+
+        return c.json({
+            status: "ok",
+            data: responseData,
+        });
+    } catch (e) {
+        if (e instanceof Error) {
+            console.error(e);
+            return c.json({
+                status: "fail",
+                message: e.message,
+            });
+        }
+        return c.json({
+            status: "fail",
+            message: "internal server error",
+        });
+    }
 });
 
 app.post("/:collectionId/cover", async (c) => {

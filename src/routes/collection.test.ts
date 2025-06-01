@@ -62,7 +62,7 @@ describe("Profile", () => {
 			body: JSON.stringify({
 				title: "Wikipedia Datasets",
 				description: "100k+ rows wikipedia datasets",
-				price: "10",
+				price: 10,
 			}),
 		});
 
