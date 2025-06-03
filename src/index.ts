@@ -7,6 +7,7 @@ import { errorMiddleware } from "./middlewares/error";
 import auth from "@routes/auth";
 import user from "@routes/user";
 import collection from "@routes/collection";
+// import upload from "@routes/upload.dataset"
 
 const app = new Hono({});
 
@@ -18,6 +19,7 @@ app.use(logger());
 app.route("/auths", auth);
 app.route("/users", user);
 app.route("/collection", collection);
+// app.route("/y", upload);
 
 // default routing
 app.get("/", (c) => {

@@ -4,6 +4,7 @@ import { zodValidator } from "@/middlewares/validator";
 import { Hono } from "hono";
 import { z } from "zod";
 import Storage from "@/services/storage";
+import uploadDataset from "@/routes/upload.dataset"
 
 const prisma = new PrismaClient();
 const storage = new Storage(prisma);
@@ -141,5 +142,7 @@ app.post("/:collectionId/cover", async (c) => {
         );
     }
 });
+
+app.route(":collectionId/upload-dataset", uploadDataset);
 
 export default app;

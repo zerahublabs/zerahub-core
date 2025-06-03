@@ -1,7 +1,7 @@
 import type { Context, MiddlewareHandler } from "hono";
 import { z } from "zod";
 
-type ValidationTarget = "json" | "form" | "query" | "param";
+type ValidationTarget = "json" | "arraybuffer" | "form" | "query" | "param";
 
 // Define custom context variable types
 type ValidatedData<T extends z.ZodType> = {
@@ -22,6 +22,9 @@ export const zodValidator = <T extends z.ZodType>(
 			switch (target) {
 				case "json":
 					data = await c.req.json();
+					break;
+				case "arraybuffer":
+					data = await c.req.arrayBuffer();
 					break;
 				case "form":
 					data = await c.req.parseBody();

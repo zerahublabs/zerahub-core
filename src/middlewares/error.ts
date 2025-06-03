@@ -4,6 +4,7 @@ import { JwtTokenInvalid } from "hono/utils/jwt/types";
 import { ZodError } from "zod";
 
 export const errorMiddleware = (err: Error, c: Context) => {
+	console.log(err);
 	if (err instanceof HTTPException) {
 		return c.json(
 			{

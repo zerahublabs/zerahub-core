@@ -21,8 +21,9 @@ app.post("/", authLogin, async (c) => {
 	const body = await c.req.json();
 
 	const bodySafeParsed = registerSchema.safeParse(body);
+	console.log(bodySafeParsed.data)
 	const siwe = new SiweMessage(bodySafeParsed.data?.message as string);
-
+	
 	const fields = await siwe.verify({
 		signature: bodySafeParsed.data?.signature as string,
 	});
