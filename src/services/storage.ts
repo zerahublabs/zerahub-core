@@ -10,7 +10,7 @@ import { extname, join } from "node:path";
 import { randomBytes } from "node:crypto";
 
 export default class Storage {
-	private client: S3Client;
+	public client: S3Client;
 	private prisma: PrismaClient;
 
 	constructor(_prisma: PrismaClient) {
