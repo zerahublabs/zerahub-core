@@ -3,11 +3,17 @@ import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { openAPISpecs } from "hono-openapi";
 import { swaggerUI } from "@hono/swagger-ui";
+import { stream } from 'hono/streaming'
 import { errorMiddleware } from "./middlewares/error";
 import auth from "@routes/auth";
 import user from "@routes/user";
 import collection from "@routes/collection";
+import me from "@routes/me"
+import Storage from "./services/storage";
+import { PrismaClient } from "./generated/prisma";
 
+const prisma = new PrismaClient();
+const storage = new Storage(prisma);
 const app = new Hono({});
 
 // middleware
@@ -17,7 +23,8 @@ app.use(logger());
 // routes
 app.route("/auths", auth);
 app.route("/users", user);
-app.route("/collection", collection);
+app.route("/collections", collection);
+app.route("/me", me)
 
 // default routing
 app.get("/", (c) => {
@@ -45,6 +52,15 @@ app.get(
 		},
 	}),
 );
+
+app.get("/static/*", async (c) => {
+    const path = c.req.path.replace("/static/", "");
+
+    return stream(c, async (stream) => {
+        const streamData = storage.client.file(path).stream()
+        await stream.pipe(streamData)
+    })
+})
 
 app.get("/docs", swaggerUI({ url: "/api-specs" }));
 
