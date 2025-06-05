@@ -10,7 +10,7 @@ import user from "@routes/user";
 import collection from "@routes/collection";
 import me from "@routes/me";
 import Storage from "./services/storage";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "./generated/prisma";
 
 const prisma = new PrismaClient();
 const storage = new Storage(prisma);
