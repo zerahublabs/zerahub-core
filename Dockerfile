@@ -20,7 +20,6 @@ RUN bun install --frozen-lockfile
 COPY . .
 
 # Generate Prisma Client
-RUN bunx prisma migrate dev
 RUN bunx prisma generate
 
 # Build the application
