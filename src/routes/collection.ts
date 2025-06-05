@@ -27,9 +27,9 @@ app.get("/", async (c) => {
                 select: {
                     id: true,
                     filename: true,
-                    createdAt: true
-                }
-            }
+                    createdAt: true,
+                },
+            },
         },
     });
     const data = collections.map((d) => ({
@@ -70,19 +70,29 @@ app.get("/:collectionId", async (c) => {
                         createdAt: true,
                     },
                 },
+                user: {
+                    select: {
+                        id: true,
+                        address: true,
+                    },
+                },
             },
         });
 
-        const { coverStorage, ...collectionData } = collection || {};
-        const responseData = {
-            ...collectionData,
+        const collectionData = {
+            id: collection?.id,
+            title: collection?.title,
+            description: collection?.description,
             cover: collection?.coverStorage,
-            price: Number(collection?.price),
+            price: collection?.price,
+            createdAt: collection?.createdAt,
+            transactionHash: collection?.transactionHash,
+            publisher: collection?.user?.address,
         };
 
         return c.json({
             status: "ok",
-            data: responseData,
+            data: collectionData,
         });
     } catch (e) {
         if (e instanceof Error) {

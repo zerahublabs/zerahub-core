@@ -29,8 +29,15 @@ app.route("/me", me)
 // default routing
 app.get("/", (c) => {
 	return c.json({
-		status: "ok",
-		message: "health ok",
+		message: 'Welcome to ZeraHub API',
+		version: '1.0.0'
+	});
+});
+
+app.get("/health", (c) => {
+	return c.json({
+		status: 'ok',
+		timestamp: new Date().toISOString()
 	});
 });
 
@@ -66,7 +73,11 @@ app.get("/docs", swaggerUI({ url: "/api-specs" }));
 
 app.onError(errorMiddleware);
 
+// Start the server
+const port = parseInt(process.env.PORT || '3000')
+console.log(`Server is running on port ${port}`)
+
 export default {
-	port: 3001,
+	port,
 	fetch: app.fetch,
 };
