@@ -4,8 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "bun run --watch src/index.ts",
-    "start": "bunx prisma migrate deploy && bun run dist/index.js",
-    "build": "bun build src/index.ts --outdir dist --target bun",
+    "start": "bunx prisma migrate deploy && bun src/index.ts",
     "test": "vitest run",
     "test:watch": "vitest watch",
     "test:coverage": "vitest run --coverage",

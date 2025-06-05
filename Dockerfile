@@ -22,9 +22,6 @@ COPY . .
 # Generate Prisma Client
 RUN bunx prisma generate
 
-# Build the application
-RUN bun run build
-
 # Production stage
 FROM oven/bun:1-slim
 WORKDIR /app
