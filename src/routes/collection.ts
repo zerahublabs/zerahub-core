@@ -1,27 +1,9 @@
-import { PrismaClient, type User } from "@/generated/prisma";
-import { authMiddleware } from "@/middlewares/auth";
-import { zodValidator } from "@/middlewares/validator";
+import { PrismaClient } from "@/generated/prisma";
 import { Hono } from "hono";
-import { z } from "zod";
-import Storage from "@/services/storage";
 
 const prisma = new PrismaClient();
-const storage = new Storage(prisma);
 
-const createCollectionSchema = z.object({
-    title: z.string().min(1),
-    description: z.string().min(1),
-    price: z.string().transform(Number),
-});
-
-type Variables = {
-    user: User;
-    validated: z.infer<typeof createCollectionSchema>;
-};
-
-const app = new Hono<{ Variables: Variables }>();
-
-app.use(authMiddleware);
+const app = new Hono();
 
 app.get("/", async (c) => {
     const page = Number(c.req.query("page") || 1);
@@ -41,13 +23,21 @@ app.get("/", async (c) => {
                     address: true,
                 },
             },
+            coverStorage: {
+                select: {
+                    id: true,
+                    filename: true,
+                    createdAt: true,
+                },
+            },
         },
     });
     const data = collections.map((d) => ({
         id: d.id,
         title: d.title,
         description: d.description,
-        cover: d.cover,
+        cover: d.coverStorage,
+        price: d.price,
         createdAt: d.createdAt,
         publisher: d.user.address,
     }));
@@ -60,100 +50,62 @@ app.get("/", async (c) => {
     });
 });
 
-app.post("/", zodValidator(createCollectionSchema, "json"), async (c) => {
-    const validatedData = c.get("validated");
+app.get("/:collectionId", async (c) => {
+    const collectionId = c.req.param("collectionId");
 
-    const collection = await prisma.collection.create({
-        data: {
-            title: validatedData.title,
-            description: validatedData.description,
-            price: validatedData.price,
-            user: {
-                connect: {
-                    address: c.get("user").address,
-                },
-            },
-        },
-    });
-
-    return c.json({
-        status: "ok",
-        data: collection,
-    });
-});
-
-app.post("/:collectionId/cover", async (c) => {
     try {
-        const collectionId = c.req.param("collectionId");
-
-        // Verify collection exists and belongs to user
         const collection = await prisma.collection.findFirst({
             where: {
                 id: collectionId,
-                user: {
-                    address: c.get("user").address,
-                },
             },
-        });
-
-        if (!collection) {
-            return c.json(
-                {
-                    status: "fail",
-                    message: "Collection not found or access denied",
-                },
-                404
-            );
-        }
-
-        const formData = await c.req.formData();
-        const file = formData.get("file") as File;
-        if (!file) {
-            return c.json(
-                {
-                    status: "fail",
-                    message: "No file uploaded",
-                },
-                400
-            );
-        }
-
-        // Upload file to storage
-        const storedFile = await storage.uploadFile(
-            file,
-            `collections/${collectionId}/cover`
-        );
-
-        await prisma.collection.update({
-            where: {
-                id: collection.id,
+            omit: {
+                cover: true,
+                deletedAt: true,
             },
-            data: {
+            include: {
                 coverStorage: {
-                    connect: {
-                        id: storedFile.id,
+                    select: {
+                        id: true,
+                        filename: true,
+                        createdAt: true,
+                    },
+                },
+                user: {
+                    select: {
+                        id: true,
+                        address: true,
                     },
                 },
             },
         });
 
+        const collectionData = {
+            id: collection?.id,
+            title: collection?.title,
+            description: collection?.description,
+            cover: collection?.coverStorage,
+            price: collection?.price,
+            createdAt: collection?.createdAt,
+            transactionHash: collection?.transactionHash,
+            publisher: collection?.user?.address,
+        };
+
         return c.json({
             status: "ok",
-            data: {
-                id: storedFile.id,
-                filename: storedFile.filename,
-                createdAt: storedFile.createdAt,
-            },
+            data: collectionData,
         });
-    } catch (err) {
-        console.error(err);
-        return c.json(
-            {
+    } catch (e) {
+        if (e instanceof Error) {
+            console.error(e);
+            return c.json({
                 status: "fail",
-                message: "Failed to upload cover",
-            },
-            500
-        );
+                message: e.message,
+            });
+        }
+        return c.json({
+            status: "fail",
+            message: "internal server error",
+        });
     }
 });
 

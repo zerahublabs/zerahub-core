@@ -1,4 +1,5 @@
 preload = ["typescript"]
+workspace = true
 
 [resolve]
 # Configure module resolution for path aliases
