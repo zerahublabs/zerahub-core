@@ -74,7 +74,7 @@ app.get("/docs", swaggerUI({ url: "/api-specs" }));
 app.onError(errorMiddleware);
 
 // Start the server
-const port = parseInt(process.env.PORT || '3000')
+const port = Number.parseInt(process.env.PORT || '3000')
 console.log(`Server is running on port ${port}`)
 
 export default {
