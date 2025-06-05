@@ -2,6 +2,11 @@
 FROM oven/bun:1 as builder
 WORKDIR /app
 
+# Install OpenSSL and other build dependencies
+RUN apt-get update && apt-get install -y \
+    openssl \
+    && rm -rf /var/lib/apt/lists/*
+
 # Copy package files
 COPY package*.json bun.lock ./
 
@@ -24,6 +29,11 @@ RUN bun run build
 # Production stage
 FROM oven/bun:1-slim
 WORKDIR /app
+
+# Install OpenSSL for production
+RUN apt-get update && apt-get install -y \
+    openssl \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy built assets from builder
 COPY --from=builder /app/package.json ./
