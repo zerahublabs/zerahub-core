@@ -32,11 +32,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy built assets from builder
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/src ./src
+COPY --from=builder /app .
 
 # Expose the port your app runs on
 EXPOSE 3000
