@@ -21,7 +21,6 @@ COPY . .
 
 # Generate Prisma Client
 RUN bunx prisma generate
-RUN bunx prisma migrate deploy
 
 # Build the application
 RUN bun run build
