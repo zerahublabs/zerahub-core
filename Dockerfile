@@ -35,7 +35,6 @@ RUN apt-get update && apt-get install -y \
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 
 # Expose the port your app runs on
