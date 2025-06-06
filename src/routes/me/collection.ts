@@ -64,6 +64,7 @@ app.get("/", async (c) => {
         price: d.price,
         createdAt: d.createdAt,
         transactionHash: d.transactionHash,
+        status: d.status,
         publisher: d.user.address,
     }));
 
