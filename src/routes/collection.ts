@@ -86,6 +86,7 @@ app.get("/:collectionId", async (c) => {
             cover: collection?.coverStorage,
             price: collection?.price,
             createdAt: collection?.createdAt,
+            status: collection?.status,
             transactionHash: collection?.transactionHash,
             publisher: collection?.user?.address,
         };
