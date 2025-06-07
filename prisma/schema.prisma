@@ -24,13 +24,14 @@ model CollectionCategory {
 }
 
 model User {
-    id         String       @id @default(uuid())
-    username   String       @unique
-    address    String       @unique
-    createdAt  DateTime     @default(now())
-    updatedAt  DateTime     @default(now())
-    deletedAt  DateTime?
-    Collection Collection[]
+    id                   String                 @id @default(uuid())
+    username             String                 @unique
+    address              String                 @unique
+    createdAt            DateTime               @default(now())
+    updatedAt            DateTime               @default(now())
+    deletedAt            DateTime?
+    Collection           Collection[]
+    StorageUploadRequest StorageUploadRequest[]
 }
 
 model Collection {
@@ -68,12 +69,12 @@ model CollectionMetadata {
 }
 
 model Storage {
-    id              String            @id @default(uuid())
-    filename        String            @unique
-    bucket          String
-    createdAt       DateTime          @default(now())
-    updatedAt       DateTime          @default(now())
-    deletedAt       DateTime?
+    id        String    @id @default(uuid())
+    key       String    @unique
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @default(now())
+    deletedAt DateTime?
+
     StorageMetadata StorageMetadata[]
     Collection      Collection[]
 }
@@ -88,6 +89,20 @@ model StorageMetadata {
     storageId String
 
     storage Storage @relation(fields: [storageId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model StorageUploadRequest {
+    id        String   @id @default(uuid())
+    type      String
+    size      BigInt
+    url       String
+    key       String
+    expiresAt DateTime
+    used      Boolean  @default(false)
+    createdAt DateTime @default(now())
+
+    userId String
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 enum CollectionStatus {

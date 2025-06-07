@@ -1,128 +1,47 @@
 import {
     STORAGE_ACCESS_KEY,
-    STORAGE_BUCKET,
     STORAGE_ENDPOINT,
     STORAGE_SECRET_KEY,
 } from "@/config/storage";
-import { S3Client } from "bun";
-import type { PrismaClient } from "@/generated/prisma";
-import { extname, join } from "node:path";
 import { randomBytes } from "node:crypto";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { SHA256 } from "bun";
 
 export default class Storage {
     public client: S3Client;
-    private prisma: PrismaClient;
 
-    constructor(_prisma: PrismaClient) {
+    constructor() {
         this.client = new S3Client({
-            accessKeyId: STORAGE_ACCESS_KEY,
-            secretAccessKey: STORAGE_SECRET_KEY,
             endpoint: STORAGE_ENDPOINT,
-            bucket: STORAGE_BUCKET,
+            credentials: {
+                accessKeyId: STORAGE_ACCESS_KEY,
+                secretAccessKey: STORAGE_SECRET_KEY,
+            },
+            forcePathStyle: true,
         });
-        this.prisma = _prisma;
     }
 
-    private generateRandomFileName(originalName: string): string {
-        const ext = extname(originalName);
+    private generateRandomKey(): string {
         const timestamp = Date.now();
-        const randomString = randomBytes(16).toString("hex");
-        return `${timestamp}-${randomString}${ext}`;
+        const randomString = new SHA256().update(randomBytes(32)).digest();
+        return `${timestamp}-${randomString}`;
     }
 
-    private async saveFileMetadata(storageId: string, file: File) {
-        return await this.prisma.storageMetadata.createMany({
-            data: [
-                {
-                    storageId,
-                    key: "file_size",
-                    value: file.size.toString(),
-                },
-                {
-                    storageId,
-                    key: "file_type",
-                    value: file.type,
-                },
-                {
-                    storageId,
-                    key: "file_name",
-                    value: file.name,
-                },
-                {
-                    storageId,
-                    key: "file_extension",
-                    value: extname(file.name),
-                },
-                {
-                    storageId,
-                    key: "file_last_modified",
-                    value: file.lastModified.toString(),
-                },
-            ],
-        });
-    }
-
-    async saveFileToDatabase(file: File, path: string) {
-        const storageData = await this.prisma.storage.create({
-            data: {
-                filename: path,
-                bucket: STORAGE_BUCKET,
-            },
-        });
-        await this.saveFileMetadata(storageData.id, file);
-
-        return storageData;
-    }
-
-    async deleteFileFromDatabase(storageId: string) {
-        await this.prisma.storage.delete({
-            where: {
-                id: storageId,
-            },
-        });
-        return true;
-    }
-
-    async uploadFile(file: File, path: string) {
-        const randomFileName = this.generateRandomFileName(file.name);
-        const fullPath = join(path, randomFileName);
-
-        const s3File = this.client.file(fullPath);
-        const arrayBuffer = await file.arrayBuffer();
-        await s3File.write(arrayBuffer);
-
-        return await this.saveFileToDatabase(file, fullPath);
-    }
-
-    async uploadLargeFile(file: File, path: string) {
-        const randomFileName = this.generateRandomFileName(file.name);
-        const fullPath = join(path, randomFileName);
-
-        const s3File = this.client.file(fullPath);
-        const writer = s3File.writer({
-            retry: 3,
-            queueSize: 10,
-            partSize: 1024 * 1024 * 10,
+    async createPreSignedUrl(type: string, bucket: string) {
+        const key = this.generateRandomKey();
+        const command = new PutObjectCommand({
+            Bucket: bucket,
+            Key: key,
+            ContentType: type,
         });
 
-        const arrayBuffer = await file.arrayBuffer();
-        writer.write(arrayBuffer);
-        await writer.end();
-
-        return await this.saveFileToDatabase(file, fullPath);
-    }
-
-    async deleteFile(storageId?: string, path?: string) {
-        if (typeof storageId === "undefined" && typeof path === "undefined")
-            return false;
-
-        const isExists = await this.client.exists(path as string);
-        if (!isExists) {
-            return false;
-        }
-
-        await this.client.delete(path as string);
-        await this.deleteFileFromDatabase(storageId as string);
-        return true;
+        const signedUrl = await getSignedUrl(this.client, command, {
+            expiresIn: 3600,
+        });
+        return {
+            key,
+            signedUrl,
+        };
     }
 }

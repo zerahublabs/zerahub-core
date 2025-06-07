@@ -1,6 +1,5 @@
 import { PrismaClient, type User } from "@/generated/prisma";
 import { authMiddleware } from "@/middlewares/auth";
-import { zodValidator } from "@/middlewares/validator";
 import Storage from "@/services/storage";
 import { Hono } from "hono";
 import { z } from "zod";
@@ -8,19 +7,54 @@ import { z } from "zod";
 const createCollectionSchema = z.object({
     title: z.string().min(1),
     description: z.string().min(1),
-    price: z.number().int().min(0).default(0).transform(Number),
+});
+
+const uploadCollectionSchema = z.object({
+    key: z.string().min(1),
+    type: z.string().min(1),
+    size: z.number().int().nonnegative().transform(Number),
+});
+
+const confirmUploadCollectionSchema = z.object({
+    requestId: z.string().min(1),
+});
+
+const updateCoverCollectionSchema = z.object({
+    storageId: z.string().min(0),
 });
 
 type Variables = {
     user: User;
-    validated: z.infer<typeof createCollectionSchema>;
 };
 
 const prisma = new PrismaClient();
-const storage = new Storage(prisma);
+const storage = new Storage();
 const app = new Hono<{ Variables: Variables }>();
 
 app.use(authMiddleware);
+app.use("/:collectionId/*", async (c, next) => {
+    const collectionId = c.req.param("collectionId");
+
+    const collection = prisma.collection.findFirst({
+        where: {
+            id: collectionId,
+            user: {
+                address: c.get("user").address,
+            },
+        },
+    });
+    if (!collection) {
+        return c.json(
+            {
+                status: "fail",
+                message: "collection not found",
+            },
+            404
+        );
+    }
+    await next();
+    return;
+});
 
 app.get("/", async (c) => {
     const page = Number(c.req.query("page") || 1);
@@ -43,7 +77,6 @@ app.get("/", async (c) => {
             coverStorage: {
                 select: {
                     id: true,
-                    filename: true,
                     createdAt: true,
                 },
             },
@@ -61,7 +94,6 @@ app.get("/", async (c) => {
         title: d.title,
         description: d.description,
         cover: d.coverStorage,
-        price: d.price,
         createdAt: d.createdAt,
         transactionHash: d.transactionHash,
         status: d.status,
@@ -74,14 +106,13 @@ app.get("/", async (c) => {
     });
 });
 
-app.post("/", zodValidator(createCollectionSchema, "json"), async (c) => {
-    const validatedData = c.get("validated");
+app.post("/", async (c) => {
+    const validatedData = createCollectionSchema.parse(await c.req.json());
 
     const collection = await prisma.collection.create({
         data: {
             title: validatedData.title,
             description: validatedData.description,
-            price: Number(validatedData.price),
             user: {
                 connect: {
                     address: c.get("user").address,
@@ -90,79 +121,17 @@ app.post("/", zodValidator(createCollectionSchema, "json"), async (c) => {
         },
     });
 
-    const responseData = {
-        ...collection,
-        price: Number(collection.price),
-    };
-
     return c.json({
         status: "ok",
-        data: responseData,
+        data: collection,
     });
 });
 
-app.put(
-    "/:collectionId",
-    zodValidator(createCollectionSchema, "json"),
-    async (c) => {
-        try {
-
-            const collectionId = c.req.param("collectionId");
-            const validatedData = c.get("validated");
-
-            const collection = await prisma.collection.findFirst({
-                where: {
-                    id: collectionId,
-                    user: {
-                        address: c.get("user").address,
-                    },
-                },
-                select: { id: true },
-            });
-            if (!collection) {
-                return c.json(
-                    {
-                        status: "fail",
-                        message: "collection not found",
-                    },
-                    404
-                );
-            }
-
-            const newCollection = await prisma.collection.update({
-                data: {
-                    title: validatedData.title,
-                    description: validatedData.description,
-                    price: Number(validatedData.price),
-                },
-                where: {
-                    id: collectionId,
-                    user: {
-                        address: c.get("user").address,
-                    },
-                },
-            });
-
-            return c.json({
-                status: "ok",
-                data: newCollection,
-            });
-        } catch (error) {
-            console.error(error)
-
-            return c.json({
-                status: "fail",
-                message: "failed"
-            })
-        }
-    }
-);
-
-app.post("/:collectionId/cover", async (c) => {
+app.put("/:collectionId", async (c) => {
     try {
         const collectionId = c.req.param("collectionId");
+        const validatedData = createCollectionSchema.parse(await c.req.json());
 
-        // Verify collection exists and belongs to user
         const collection = await prisma.collection.findFirst({
             where: {
                 id: collectionId,
@@ -170,87 +139,128 @@ app.post("/:collectionId/cover", async (c) => {
                     address: c.get("user").address,
                 },
             },
-            include: {
-                coverStorage: true
-            },
+            select: { id: true },
         });
-
         if (!collection) {
             return c.json(
                 {
                     status: "fail",
-                    message: "Collection not found or access denied",
+                    message: "collection not found",
                 },
                 404
             );
         }
 
-        const formData = await c.req.formData();
-        const file = formData.get("file") as File;
-        if (!file) {
-            return c.json(
-                {
-                    status: "fail",
-                    message: "No file uploaded",
-                },
-                400
-            );
-        }
-
-        // First, update collection to remove the cover reference
-        if (collection.coverStorage) {
-            await prisma.collection.update({
-                where: {
-                    id: collection.id,
-                },
-                data: {
-                    cover: null
-                }
-            });
-
-            // Then delete the old storage file
-            await storage.deleteFile(
-                collection.coverStorage.id,
-                collection.coverStorage.filename
-            );
-        }
-
-        // Upload file to storage
-        const storedFile = await storage.uploadFile(
-            file,
-            `collections/${collectionId}/cover`
-        );
-
-        await prisma.collection.update({
-            where: {
-                id: collection.id,
-            },
+        const newCollection = await prisma.collection.update({
             data: {
-                coverStorage: {
-                    connect: {
-                        id: storedFile.id,
-                    },
+                title: validatedData.title,
+                description: validatedData.description
+            },
+            where: {
+                id: collectionId,
+                user: {
+                    address: c.get("user").address,
                 },
             },
         });
 
         return c.json({
             status: "ok",
+            data: newCollection,
+        });
+    } catch (error) {
+        console.error(error);
+
+        return c.json({
+            status: "fail",
+            message: "failed",
+        });
+    }
+});
+
+app.post("/:collectionId/request-upload", async (c) => {
+    try {
+        const validatedData = uploadCollectionSchema.parse(await c.req.json());
+
+        const { signedUrl, key } = await storage.createPreSignedUrl(
+            validatedData.type,
+            "zerahub-storages"
+        );
+
+        const responseData = await prisma.storageUploadRequest.create({
             data: {
-                id: storedFile.id,
-                filename: storedFile.filename,
-                createdAt: storedFile.createdAt,
+                type: validatedData.type,
+                size: validatedData.size,
+                expiresAt: new Date(new Date().getTime() + 3600),
+                url: signedUrl,
+                key: key,
+                user: {
+                    connect: {
+                        address: c.get("user").address,
+                    },
+                },
             },
         });
-    } catch (err) {
-        console.error(err);
-        return c.json(
-            {
-                status: "fail",
-                message: "Failed to upload cover",
-            },
-            500
+        return c.json({
+            status: "ok",
+            data: responseData,
+        });
+    } catch (error) {
+        return c.json({
+            status: "fail",
+            message: "failed to prepare upload",
+        });
+    }
+});
+
+app.post("/:collectionId/confirm-upload", async (c) => {
+    try {
+        const validatedData = confirmUploadCollectionSchema.parse(
+            await c.req.json()
         );
+
+        const storageRequestData = await prisma.storageUploadRequest.findFirst({
+            where: {
+                id: validatedData.requestId,
+                user: {
+                    address: c.get("user").address,
+                },
+            },
+        });
+
+        if (!storageRequestData) {
+            return c.json({
+                status: "fail",
+                message: "no storage request found or access denied",
+            });
+        }
+
+        await prisma.storageUploadRequest.update({
+            where: {
+                id: validatedData.requestId,
+                user: {
+                    address: c.get("user").address,
+                },
+            },
+            data: {
+                used: true,
+            },
+        });
+        const storageData = await prisma.storage.create({
+            data: {
+                key: storageRequestData.key,
+            },
+        });
+
+        return c.json({
+            status: "ok",
+            data: storageData,
+        });
+    } catch (error) {
+        return c.json({
+            status: "fail",
+            message: "failed to confirm upload",
+        });
     }
 });
 
@@ -258,60 +268,29 @@ app.put("/:collectionId/cover", async (c) => {
     try {
         const collectionId = c.req.param("collectionId");
 
-        // Verify collection exists and belongs to user
-        const collection = await prisma.collection.findFirst({
+        const validatedData = updateCoverCollectionSchema.parse(
+            await c.req.json()
+        );
+        const storageData = await prisma.storage.findFirst({
             where: {
-                id: collectionId,
-                user: {
-                    address: c.get("user").address,
-                },
-            },
-            include: {
-                coverStorage: true
+                id: validatedData.storageId,
             },
         });
 
-        if (!collection) {
-            return c.json(
-                {
-                    status: "fail",
-                    message: "Collection not found or access denied",
-                },
-                404
-            );
+        if (!storageData) {
+            return c.json({
+                status: "fail",
+                message: "storage not found",
+            });
         }
-
-        const formData = await c.req.formData();
-        const file = formData.get("file") as File;
-        if (!file) {
-            return c.json(
-                {
-                    status: "fail",
-                    message: "No file uploaded",
-                },
-                400
-            );
-        }
-
-        await storage.deleteFile(
-            collection?.coverStorage?.id,
-            collection?.coverStorage?.filename
-        );
-
-        // Upload file to storage
-        const storedFile = await storage.uploadFile(
-            file,
-            `collections/${collectionId}/cover`
-        );
-
-        await prisma.collection.update({
+        const collectionData = await prisma.collection.update({
             where: {
-                id: collection.id,
+                id: collectionId,
             },
             data: {
                 coverStorage: {
                     connect: {
-                        id: storedFile.id,
+                        id: storageData.id,
                     },
                 },
             },
@@ -319,11 +298,7 @@ app.put("/:collectionId/cover", async (c) => {
 
         return c.json({
             status: "ok",
-            data: {
-                id: storedFile.id,
-                filename: storedFile.filename,
-                createdAt: storedFile.createdAt,
-            },
+            data: collectionData,
         });
     } catch (err) {
         console.error(err);
