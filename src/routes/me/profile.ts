@@ -8,16 +8,16 @@ const app = new Hono();
 app.use(authMiddleware);
 
 app.get("/", async (c) => {
-    const user = await prisma.user.findFirst({
-        where: {
-            address: c.get("user").address,
-        },
-    });
+	const user = await prisma.user.findFirst({
+		where: {
+			address: c.get("user").address,
+		},
+	});
 
-    return c.json({
-        status: "ok",
-        data: user,
-    });
+	return c.json({
+		status: "ok",
+		data: user,
+	});
 });
 
 export default app;

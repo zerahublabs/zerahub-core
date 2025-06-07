@@ -28,58 +28,58 @@ app.route("/me", me);
 
 // default routing
 app.get("/", (c) => {
-    return c.json({
-        message: "Welcome to ZeraHub API",
-        version: "1.0.0",
-    });
+	return c.json({
+		message: "Welcome to ZeraHub API",
+		version: "1.0.0",
+	});
 });
 
 app.get("/health", async (c) => {
-    await prisma.$queryRaw`SELECT 1`;
-    return c.json({
-        status: "ok",
-        database: "connected",
-        timestamp: new Date().toISOString(),
-    });
+	await prisma.$queryRaw`SELECT 1`;
+	return c.json({
+		status: "ok",
+		database: "connected",
+		timestamp: new Date().toISOString(),
+	});
 });
 
 app.get(
-    "/api-specs",
-    openAPISpecs(app, {
-        documentation: {
-            info: {
-                title: "ZeraHub API",
-                version: "1.0.0",
-                description: "ZeraHub Core API Specs",
-            },
-            servers: [
-                {
-                    url: "http://localhost:3001",
-                    description: "Local Servers",
-                },
-            ],
-        },
-    })
+	"/api-specs",
+	openAPISpecs(app, {
+		documentation: {
+			info: {
+				title: "ZeraHub API",
+				version: "1.0.0",
+				description: "ZeraHub Core API Specs",
+			},
+			servers: [
+				{
+					url: "http://localhost:3001",
+					description: "Local Servers",
+				},
+			],
+		},
+	}),
 );
 
 app.get("/static/s3/cover/:keyId", async (c) => {
-    const key = c.req.path.replace("/static/", "");
+	const key = c.req.path.replace("/static/", "");
 
-    return stream(c, async (stream) => {
-        const streamData = await storage.getFile(key, "zerahub-storages");
-        if (streamData) {
-            const webStream = streamData.transformToWebStream();
-            stream.pipe(webStream);
-        } else {
-            c.json(
-                {
-                    message: "File not found",
-                },
-                404
-            );
-            return;
-        }
-    });
+	return stream(c, async (stream) => {
+		const streamData = await storage.getFile(key, "zerahub-storages");
+		if (streamData) {
+			const webStream = streamData.transformToWebStream();
+			stream.pipe(webStream);
+		} else {
+			c.json(
+				{
+					message: "File not found",
+				},
+				404,
+			);
+			return;
+		}
+	});
 });
 
 app.get("/docs", swaggerUI({ url: "/api-specs" }));
@@ -91,6 +91,6 @@ const port = Number.parseInt(process.env.PORT || "3000");
 console.log(`Server is running on port ${port}`);
 
 export default {
-    port,
-    fetch: app.fetch,
+	port,
+	fetch: app.fetch,
 };

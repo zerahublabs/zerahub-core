@@ -1,43 +1,43 @@
 {
-  "name": "zerahub-core",
-  "version": "1.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "bun run --watch src/index.ts",
-    "start": "bunx prisma migrate deploy && bun run src/index.ts",
-    "test": "vitest run",
-    "test:watch": "vitest watch",
-    "test:coverage": "vitest run --coverage",
-    "listen:contract": ""
-  },
-  "dependencies": {
-    "@aws-sdk/client-s3": "^3.826.0",
-    "@aws-sdk/s3-request-presigner": "^3.826.0",
-    "@hono/swagger-ui": "^0.5.1",
-    "@prisma/client": "^6.9.0",
-    "axios": "^1.9.0",
-    "busboy": "^1.6.0",
-    "form-data": "^4.0.2",
-    "hono": "^4.0.5",
-    "hono-openapi": "^0.4.8",
-    "siwe": "^3.0.0",
-    "viem": "^2.30.6",
-    "vitest": "^3.2.1",
-    "winston": "^3.17.0",
-    "zod": "^3.25.50",
-    "zod-openapi": "^4.2.4"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "1.9.4",
-    "@types/bun": "latest",
-    "@types/node": "^22.15.29",
-    "bun-types": "latest",
-    "k6": "^0.0.0",
-    "prisma": "^6.9.0"
-  },
-  "module": "src/index.ts",
-  "private": true,
-  "peerDependencies": {
-    "typescript": "^5.8.3"
-  }
+	"name": "zerahub-core",
+	"version": "1.0.0",
+	"type": "module",
+	"scripts": {
+		"dev": "bun run --watch src/index.ts",
+		"start": "bunx prisma migrate deploy && bun run src/index.ts",
+		"test": "vitest run",
+		"test:watch": "vitest watch",
+		"test:coverage": "vitest run --coverage",
+		"listen:contract": ""
+	},
+	"dependencies": {
+		"@aws-sdk/client-s3": "^3.826.0",
+		"@aws-sdk/s3-request-presigner": "^3.826.0",
+		"@hono/swagger-ui": "^0.5.1",
+		"@prisma/client": "^6.9.0",
+		"axios": "^1.9.0",
+		"busboy": "^1.6.0",
+		"form-data": "^4.0.2",
+		"hono": "^4.0.5",
+		"hono-openapi": "^0.4.8",
+		"siwe": "^3.0.0",
+		"viem": "^2.30.6",
+		"vitest": "^3.2.1",
+		"winston": "^3.17.0",
+		"zod": "^3.25.50",
+		"zod-openapi": "^4.2.4"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "1.9.4",
+		"@types/bun": "latest",
+		"@types/node": "^22.15.29",
+		"bun-types": "latest",
+		"k6": "^0.0.0",
+		"prisma": "^6.9.0"
+	},
+	"module": "src/index.ts",
+	"private": true,
+	"peerDependencies": {
+		"typescript": "^5.8.3"
+	}
 }
