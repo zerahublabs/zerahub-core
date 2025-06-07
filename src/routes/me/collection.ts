@@ -15,6 +15,13 @@ const uploadCollectionSchema = z.object({
     size: z.number().int().nonnegative().transform(Number),
 });
 
+const commitCollectionSchema = z.object({
+    storageId: z.string().min(0),
+    filename: z.string().min(0),
+    size: z.number().nonnegative(),
+    checksum: z.string(),
+});
+
 const confirmUploadCollectionSchema = z.object({
     requestId: z.string().min(1),
 });
@@ -154,7 +161,7 @@ app.put("/:collectionId", async (c) => {
         const newCollection = await prisma.collection.update({
             data: {
                 title: validatedData.title,
-                description: validatedData.description
+                description: validatedData.description,
             },
             where: {
                 id: collectionId,
@@ -312,4 +319,40 @@ app.put("/:collectionId/cover", async (c) => {
     }
 });
 
+app.post("/:collectionId/commit", async (c) => {
+    const validatedData = commitCollectionSchema.parse(await c.req.json());
+
+    const storageRequestData = await prisma.storageUploadRequest.findFirst({
+        where: {
+            id: validatedData.storageId,
+            user: {
+                address: c.get("user").address,
+            },
+        },
+    });
+
+    if (!storageRequestData) {
+        return c.json(
+            {
+                status: "fail",
+                message: "request not found",
+            },
+            404
+        );
+    }
+
+    const collectionStorage = await prisma.collectionStorage.create({
+        data: {
+            filename: validatedData.filename,
+            size: validatedData.size,
+            checksum: validatedData.checksum,
+            status: "PENDING",
+        },
+    });
+
+    return c.json({
+        status: "ok",
+        data: collectionStorage,
+    });
+});
 export default app;

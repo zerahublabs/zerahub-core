@@ -6,7 +6,7 @@ import { SiweMessage } from "siwe";
 const mnemonic = "test test test test test test test test test test test junk";
 
 describe("Authentication", () => {
-	var nonce = "";
+	let nonce = "";
 	const account_1 = mnemonicToAccount(mnemonic, {
 		accountIndex: 0,
 	});

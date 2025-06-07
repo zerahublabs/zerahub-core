@@ -31,8 +31,9 @@
     "@biomejs/biome": "1.9.4",
     "@types/bun": "latest",
     "@types/node": "^22.15.29",
-    "prisma": "^6.9.0",
-    "bun-types": "latest"
+    "bun-types": "latest",
+    "k6": "^0.0.0",
+    "prisma": "^6.9.0"
   },
   "module": "src/index.ts",
   "private": true,

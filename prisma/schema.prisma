@@ -15,64 +15,99 @@ datasource db {
 }
 
 model CollectionCategory {
-    id           String      @id @default(uuid())
-    value        String
-    createdAt    String
-    updatedAt    String
-    Collection   Collection? @relation(fields: [collectionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    id        String   @id @default(uuid())
+    value     String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
     collectionId String?
+    Collection   Collection? @relation(fields: [collectionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+    @@index([id])
 }
 
 model User {
-    id                   String                 @id @default(uuid())
-    username             String                 @unique
-    address              String                 @unique
-    createdAt            DateTime               @default(now())
-    updatedAt            DateTime               @default(now())
-    deletedAt            DateTime?
+    id        String    @id @default(uuid())
+    username  String    @unique
+    address   String    @unique
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+    deletedAt DateTime?
+
     Collection           Collection[]
     StorageUploadRequest StorageUploadRequest[]
+
+    @@index([address])
 }
 
 model Collection {
-    id              String               @id @default(uuid())
+    id              String    @id @default(uuid())
     userId          String
     title           String
     description     String
-    price           Int                  @default(0)
+    price           Int       @default(0)
     cover           String?
-    isRegistered    Boolean              @default(false)
+    isRegistered    Boolean   @default(false)
     transactionHash String?
-    isDeleted       Boolean              @default(false)
-    createdAt       DateTime             @default(now())
-    updatedAt       DateTime             @default(now())
+    isDeleted       Boolean   @default(false)
+    createdAt       DateTime  @default(now())
+    updatedAt       DateTime  @updatedAt
     deletedAt       DateTime?
-    categories      CollectionCategory[]
 
     status CollectionStatus @default(DRAFT)
 
     user               User                 @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
     coverStorage       Storage?             @relation(fields: [cover], references: [id], onDelete: SetNull, onUpdate: Cascade)
+    categories         CollectionCategory[]
     CollectionMetadata CollectionMetadata[]
 }
 
 model CollectionMetadata {
     id           String    @id @default(uuid())
-    collectionid String
+    collectionId String
     key          String
     value        String
     createdAt    DateTime  @default(now())
-    updatedAt    DateTime  @default(now())
+    updatedAt    DateTime  @updatedAt
     deletedAt    DateTime?
 
-    collection Collection @relation(fields: [collectionid], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model CollectionStorage {
+    id        String                  @id @default(uuid())
+    filename  String
+    size      BigInt
+    checksum  String?
+    status    CollectionStorageStatus @default(PENDING)
+    createdAt DateTime                @default(now())
+    updatedAt DateTime                @updatedAt
+
+    CollectionStorageFile CollectionStorageFile[]
+}
+
+model CollectionStorageFile {
+    id        String   @id @default(uuid())
+    path      String
+    filename  String
+    extension String
+    size      BigInt
+    mimeType  String
+    checksum  String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    collectionStorageId String
+    collectionStorage   CollectionStorage @relation(fields: [collectionStorageId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+    @@index([collectionStorageId, path, filename])
 }
 
 model Storage {
     id        String    @id @default(uuid())
     key       String    @unique
     createdAt DateTime  @default(now())
-    updatedAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
     deletedAt DateTime?
 
     StorageMetadata StorageMetadata[]
@@ -81,10 +116,10 @@ model Storage {
 
 model StorageMetadata {
     id        String   @id @default(uuid())
-    key       String
+    key       String   @unique
     value     String
     createdAt DateTime @default(now())
-    updatedAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
     storageId String
 
@@ -96,10 +131,10 @@ model StorageUploadRequest {
     type      String
     size      BigInt
     url       String
-    key       String
+    key       String   @unique
     expiresAt DateTime
     used      Boolean  @default(false)
-    createdAt DateTime @default(now())
+    createdAt DateTime @updatedAt
 
     userId String
     user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -110,4 +145,11 @@ enum CollectionStatus {
     PUBLISHED
     ARCHIVED
     SUSPENDED
+}
+
+enum CollectionStorageStatus {
+    PENDING
+    INDEXING
+    FAILED
+    SUCCESS
 }

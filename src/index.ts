@@ -13,7 +13,7 @@ import Storage from "./services/storage";
 import { PrismaClient } from "./generated/prisma";
 
 const prisma = new PrismaClient();
-const storage = new Storage(prisma);
+const storage = new Storage();
 const app = new Hono({});
 
 // middleware
@@ -62,12 +62,23 @@ app.get(
     })
 );
 
-app.get("/static/*", async (c) => {
-    const path = c.req.path.replace("/static/", "");
+app.get("/static/s3/cover/:keyId", async (c) => {
+    const key = c.req.path.replace("/static/", "");
 
     return stream(c, async (stream) => {
-        const streamData = storage.client.file(path).stream();
-        await stream.pipe(streamData);
+        const streamData = await storage.getFile(key, "zerahub-storages");
+        if (streamData) {
+            const webStream = streamData.transformToWebStream();
+            stream.pipe(webStream);
+        } else {
+            c.json(
+                {
+                    message: "File not found",
+                },
+                404
+            );
+            return;
+        }
     });
 });
 

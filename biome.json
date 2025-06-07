@@ -29,7 +29,10 @@
 			"src/services/*.ts",
 			"src/types/*.ts",
 			"src/*.ts"
-		]
+		],
+        "ignore": [
+            "src/generated/*"
+        ]
 	},
 	"javascript": {
 		"formatter": {

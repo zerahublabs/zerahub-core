@@ -4,7 +4,7 @@ import {
     STORAGE_SECRET_KEY,
 } from "@/config/storage";
 import { randomBytes } from "node:crypto";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { SHA256 } from "bun";
 
@@ -43,5 +43,15 @@ export default class Storage {
             key,
             signedUrl,
         };
+    }
+
+    async getFile(key: string, bucket: string) {
+        const command = new GetObjectCommand({
+            Bucket: bucket,
+            Key: key
+        })
+
+        const response = await this.client.send(command)
+        return response.Body
     }
 }
